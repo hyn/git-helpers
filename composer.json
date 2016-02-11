@@ -1,0 +1,27 @@
+{
+    "name": "luceos/git-helpers",
+    "description": "Assists with working lots of packages at once.",
+    "license": "MIT",
+    "authors": [
+        {
+            "name": "Daniël Klabbers",
+            "email": "daniel+hyn@klabbers.email",
+            "homepage": "http://hyn.io"
+        }
+    ],
+    "require" : {
+        "php": ">=5.5.9",
+        "symfony/console": "^3.0",
+        "illuminate/support": "^5.2"
+    },
+    "autoload": {
+        "psr-4": {
+            "Luceos\\GitHelpers\\": "src/"
+        }
+    },
+    "extra": {
+        "branch-alias": {
+            "dev-master": "0.2.x-dev"
+        }
+    },
+}
