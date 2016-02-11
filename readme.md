@@ -35,7 +35,6 @@ set your composer file to point to these packages:
 ```json
 {
     "require": {
-        .. other packages
         "vendor/package": "*@dev"
     },
     "repositories: [
