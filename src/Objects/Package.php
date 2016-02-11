@@ -63,12 +63,21 @@ class Package {
     /**
      * Package constructor.
      *
-     * @param $composer
      * @param $path
+     * @throws \Exception
      */
-    public function __construct($composer, $path)
+    public function __construct($path)
     {
-        $this->composer = collect(json_decode($composer, true));
+        if(!is_dir($path))
+        {
+            throw new \Exception("$path does not exist.");
+        }
+
+        if(!realpath("$path/composer.json")) {
+            throw new \Exception("No composer file in $path.");
+        }
+
+        $this->composer = collect(json_decode(file_get_contents(realpath("$path/composer.json")), true));
 
         chdir($path);
 

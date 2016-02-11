@@ -29,14 +29,23 @@ class StatusHelper extends Command
     {
         $output->writeLn("<comment>Verifying status for: {$this->directory}</comment>");
 
-        foreach (glob("*", GLOB_ONLYDIR) as $subDirectory) {
+        $subDirectories = glob("*", GLOB_ONLYDIR);
+
+        if(!count($subDirectories)) {
+            $output->writeln('<error>No subdirectories found.</error>');
+            return;
+        }
+
+        foreach ($subDirectories as $subDirectory) {
 
             if (!file_exists("{$subDirectory}/composer.json")) {
                 continue;
             }
 
-            $package = new Package(file_get_contents("{$subDirectory}/composer.json"),
-                "{$this->directory}/{$subDirectory}");
+            // Instantiates package from directory.
+            $package = new Package(
+                "{$this->directory}/{$subDirectory}"
+            );
 
             $output->writeln(sprintf('<info>%s - version: %s</info>', $package->name, $package->latestTag));
 
