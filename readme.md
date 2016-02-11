@@ -37,7 +37,7 @@ set your composer file to point to these packages:
     "require": {
         "vendor/package": "*@dev"
     },
-    "repositories: [
+    "repositories": [
         {
             "type": "path",
             "url": "workbench/*/"
