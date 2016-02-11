@@ -13,7 +13,7 @@ class StatusHelper extends Command
 
     protected function configure()
     {
-        $this->setName('git:status')
+        $this->setName('status')
             ->setDescription('Shows status of git repositories in all subdirectories.');
 
         $this->directory = getcwd();
@@ -27,7 +27,7 @@ class StatusHelper extends Command
      */
     protected function execute(InputInterface $input, OutputInterface $output)
     {
-        $output->writeLn("<comment>Verifying status for: {$this->directory}</comment>");
+        $output->writeLn(["<comment>Verifying status for: {$this->directory}</comment>", '']);
 
         $subDirectories = glob("*", GLOB_ONLYDIR);
 
@@ -36,6 +36,7 @@ class StatusHelper extends Command
             return;
         }
 
+        // Loop through all directories to search for repositories.
         foreach ($subDirectories as $subDirectory) {
 
             if (!file_exists("{$subDirectory}/composer.json")) {
@@ -54,6 +55,7 @@ class StatusHelper extends Command
             $output->writeln($package->getUnpushedCommitState());
             $output->writeln($package->getChangesSinceLatestTag());
 
+            // Return to original path.
             chdir($this->directory);
         }
     }
