@@ -1,8 +1,8 @@
 <?php
 
-namespace Luceos\GitHelpers\Commands;
+namespace Hyn\GitHelpers\Commands;
 
-use Luceos\GitHelpers\Objects\Package;
+use Hyn\GitHelpers\Objects\Package;
 use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Output\OutputInterface;

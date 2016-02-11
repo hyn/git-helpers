@@ -1,4 +1,4 @@
-# luceos/git-helpers
+# hyn/git-helpers
 
 This package is meant to be used in your terminal. And allows
 working with lots of subdirectories containing git repositories.
@@ -6,7 +6,7 @@ working with lots of subdirectories containing git repositories.
 ## Installation
 
 ```bash
-composer global require luceos/git-helpers
+composer global require hyn/git-helpers
 ```
 
 ## Usage

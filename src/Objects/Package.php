@@ -1,6 +1,6 @@
 <?php
 
-namespace Luceos\GitHelpers\Objects;
+namespace Hyn\GitHelpers\Objects;
 
 use Illuminate\Support\Arr;
 use Illuminate\Support\Collection;

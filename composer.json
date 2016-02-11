@@ -1,6 +1,6 @@
 {
-    "name": "luceos/git-helpers",
-    "description": "A PHP terminal app helping you manage Git states of many packages in subdirectories.",
+    "name": "hyn/git-helpers",
+    "description": "Easy helper tool for managing several Git repositories at once.",
     "license": "MIT",
     "keywords": ["git", "packages", "terminal"],
     "authors": [
@@ -17,7 +17,7 @@
     },
     "autoload": {
         "psr-4": {
-            "Luceos\\GitHelpers\\": "src/"
+            "Hyn\\GitHelpers\\": "src/"
         }
     },
     "extra": {
