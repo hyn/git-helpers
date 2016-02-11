@@ -10,10 +10,10 @@ cd ~
 composer create-project luceos/git-helpers
 ```
 
-Optionally create a symlink to `/usr/share/bin/gh` from `/home/<username>/git-helpers/bin/console.php`:
+Optionally create a symlink to `/usr/local/bin/gh` from `/home/<username>/git-helpers/bin/console.php`:
 
 ```bash
-cd /usr/share/bin
+cd /usr/local/bin
 sudo ln -s /home/<username>/git-helpers/bin/console.php ./gh
 ```
 ## Usage
