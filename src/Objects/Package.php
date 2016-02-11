@@ -9,7 +9,8 @@ use Illuminate\Support\Collection;
 /**
  * @property string $name
  */
-class Package {
+class Package
+{
 
     /**
      * @var string
@@ -56,8 +57,12 @@ class Package {
      * @var array
      */
     protected $sections = [
-        'M' => 'Modified',
-        '??' => 'Not in .git'
+        'D'  => 'Deleted files',
+        'R'  => 'Renamed files',
+        'C'  => 'Copied files',
+        'U'  => 'Unmerged files',
+        'M'  => 'Modified files',
+        '??' => 'Files not in .git'
     ];
 
     /**
@@ -68,12 +73,11 @@ class Package {
      */
     public function __construct($path)
     {
-        if(!is_dir($path))
-        {
+        if (!is_dir($path)) {
             throw new \Exception("$path does not exist.");
         }
 
-        if(!realpath("$path/composer.json")) {
+        if (!realpath("$path/composer.json")) {
             throw new \Exception("No composer file in $path.");
         }
 
@@ -96,8 +100,7 @@ class Package {
      */
     public function __get($name)
     {
-        if($this->composer->has($name))
-        {
+        if ($this->composer->has($name)) {
             return $this->composer->get($name);
         }
     }
@@ -108,6 +111,7 @@ class Package {
     public function getCommitState()
     {
         exec("git status --porcelain", $lines);
+
         return $this->shortCommitState($this->splitCommitSections($lines));
     }
 
@@ -117,6 +121,7 @@ class Package {
     public function getUnpushedCommitState()
     {
         exec("git log {$this->remoteName}/{$this->branch}..HEAD --not --remotes --oneline", $lines);
+
         return count($lines) ? "Commits unpushed: " . count($lines) : null;
     }
 
@@ -128,6 +133,7 @@ class Package {
     public function getChangesSinceLatestTag()
     {
         $count = exec("git rev-list {$this->latestTag}..HEAD --count");
+
         return $count > 0 ? "Commits since latest tag: {$count}" : null;
     }
 
@@ -141,17 +147,18 @@ class Package {
 
         foreach ($lines as $line) {
             $line = trim($line);
-            if(preg_match('/^(?<state>[^ ]+) (?<file>.*)$/', $line, $match)) {
+            if (preg_match('/^(?<state>[^ ]+) (?<file>.*)$/', $line, $match)) {
                 $state = Arr::get($match, 'state');
-                $file = Arr::get($match, 'file');
+                $file  = Arr::get($match, 'file');
 
-                if(!array_key_exists($state, $information)) {
+                if (!array_key_exists($state, $information)) {
                     $information[$state] = [];
                 }
 
                 $information[$state][] = $file;
             }
         }
+
         return collect($information);
     }
 
@@ -163,8 +170,7 @@ class Package {
     {
         $state = [];
 
-        foreach($collection as $name => $entries)
-        {
+        foreach ($collection as $name => $entries) {
             $state[] = $this->translateSection($name) . ": " . count($entries);
         }
 
@@ -211,19 +217,18 @@ class Package {
     {
         exec('git remote -v', $lines);
 
-        foreach($lines as $line)
-        {
+        foreach ($lines as $line) {
             list($remote, $url, $type) = preg_split('/\s+/', $line);
             $type = trim($type, '()');
-            if($remote === 'composer' && count($lines) > 2) {
+            if ($remote === 'composer' && count($lines) > 2) {
                 continue;
             }
-            if($remote === 'origin') {
+            if ($remote === 'origin') {
                 $this->remoteName = $remote;
-                $this->remoteUrl = $url;
-                if($type == 'fetch') {
+                $this->remoteUrl  = $url;
+                if ($type == 'fetch') {
                     $this->remoteFetchable = true;
-                } elseif($type == 'push') {
+                } elseif ($type == 'push') {
                     $this->remotePushable = false;
                 }
             }
