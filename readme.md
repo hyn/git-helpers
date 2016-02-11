@@ -6,16 +6,9 @@ working with lots of subdirectories containing git repositories.
 ## Installation
 
 ```bash
-cd ~
-composer create-project luceos/git-helpers
+composer global require luceos/git-helpers
 ```
 
-Optionally create a symlink to `/usr/local/bin/gh` from `/home/<username>/git-helpers/bin/console.php`:
-
-```bash
-cd /usr/local/bin
-sudo ln -s /home/<username>/git-helpers/bin/console.php ./gh
-```
 ## Usage
 
 You can now globally use the command `gh`, eg:
