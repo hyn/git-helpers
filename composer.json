@@ -1,7 +1,8 @@
 {
     "name": "luceos/git-helpers",
-    "description": "Assists with working lots of packages at once.",
+    "description": "A PHP terminal app helping you manage Git states of many packages in subdirectories.",
     "license": "MIT",
+    "keywords": ["git", "packages", "terminal"],
     "authors": [
         {
             "name": "Daniël Klabbers",

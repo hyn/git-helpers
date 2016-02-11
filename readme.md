@@ -23,3 +23,29 @@ You can now globally use the command `gh`, eg:
 ```bash
 gh git:status
 ```
+
+## Use cases
+
+This package is especially helpful in case you manage your development packages
+with a [repository path configuration](https://getcomposer.org/doc/05-repositories.md#path) in composer.
+
+If you create a workbench directory containing all your development packages. You can
+set your composer file to point to these packages:
+
+```json
+{
+    "require": {
+        .. other packages
+        "vendor/package": "*@dev"
+    },
+    "repositories: [
+        {
+            "type": "path",
+            "url": "workbench/*/"
+        }
+    ]
+}
+```
+The above will symlink your development packages from workbench to the vendor folder
+automatically. Now you can use the `gh git:status` command in the folder workbench to 
+check the status of your git remote and local changes immediately.
