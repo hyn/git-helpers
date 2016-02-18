@@ -48,15 +48,26 @@ class StatusHelper extends Command
                 continue;
             }
 
-            // Instantiates package from directory.
-            $package = new Package(
-                "{$this->directory}/{$subDirectory}"
-            );
+            // Instantiates package from absolute path.
+            $package = new Package("{$this->directory}/{$subDirectory}");
 
-//            $output->writeln(sprintf('<info>%s - version: %s</info>', $package->name, $package->latestTag));
+            $package->syncRemote();
+
+            $output->writeln(
+                sprintf(
+                    '<info>%s (%s/%s) - version: %s</info>',
+                    $package->name,
+                    $package->getRemote()->getName(),
+                    $package->getBranch()->getName(),
+                    $package->getLastTag()? $package->getLastTag()->getName() : '(dev)'
+                ));
 
             // Show commit status, open, added and new.
-            $output->writeln($package->getCommitsSinceTag());
+//            $output->writeln($package->getCommitsSince());
+            if($package->getCommitState(false) > 0) {
+                $output->writeln(sprintf('Uncommitted changes: %s', $package->getCommitState(false)));
+            }
+//            $output->writeln(implode(', ', $package->getCommitState()));
 //            $output->writeln($package->getCommitState());
 //            $output->writeln($package->getUnpushedCommitState());
 //            $output->writeln($package->getChangesSinceLatestTag());

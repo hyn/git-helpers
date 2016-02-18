@@ -2,7 +2,8 @@
 
 namespace Hyn\GitHelpers\Objects;
 
-use Illuminate\Support\Arr;
+use GitElephant\Command\FetchCommand;
+use GitElephant\Objects\TreeishInterface;
 use Illuminate\Support\Collection;
 use GitElephant\Repository;
 use GitElephant\Objects\Branch;
@@ -74,15 +75,19 @@ class Package
         $this->identifyProperties();
     }
 
+    public function syncRemote()
+    {
+        FetchCommand::getInstance($this->git)->fetch($this->getRemote(), [
+            '--all'
+        ]);
+    }
+
     /**
      * Sets up the environment by identifying needed properties.
      */
     protected function identifyProperties()
     {
         $this->git = new Repository($this->path);
-        $this->identifyRemote();
-        $this->identifyBranch();
-        $this->identifyLatestTag();
     }
 
     /**
@@ -107,7 +112,7 @@ class Package
     protected function identifyRemote()
     {
         // get local remotes
-        $remotes = $this->git->getRemotes(false);
+        $remotes = $this->git->getRemotes(true);
 
         /** @var Remote $remote */
         foreach ($remotes as $remote) {
@@ -117,25 +122,80 @@ class Package
         }
     }
 
-    public function getCommitsSinceTag(Tag $tag = null)
+    /**
+     * @param TreeishInterface $start
+     * @return int|void
+     */
+    public function getCommitsSince(TreeishInterface $start = null)
     {
-        if($tag == null) {
-            $tag = $this->lastTag;
+        if ($start == null) {
+            $start = $this->getLastTag();
         }
-        return $this->git->countCommits($tag);
+
+        return $this->git->countCommits($start);
     }
 
-//
-//    /**
-//     * @param $name
-//     * @return mixed
-//     */
-//    public function __get($name)
-//    {
-//        if ($this->composer->has($name)) {
-//            return $this->composer->get($name);
-//        }
-//    }
+    /**
+     * @param bool $specific
+     * @return int
+     */
+    public function getCommitState($specific = false)
+    {
+        $mutations = $this->git->getStatus()->all();
+
+        if (!$specific) {
+            return count($mutations);
+        }
+        // todo
+    }
+
+
+    /**
+     * @param $name
+     * @return mixed
+     */
+    public function __get($name)
+    {
+        if ($this->composer->has($name)) {
+            return $this->composer->get($name);
+        }
+    }
+
+    /**
+     * @return Tag
+     */
+    public function getLastTag()
+    {
+        if (is_null($this->lastTag)) {
+            $this->identifyLatestTag();
+        }
+
+        return $this->lastTag;
+    }
+
+    /**
+     * @return Remote
+     */
+    public function getRemote()
+    {
+        if (is_null($this->remote)) {
+            $this->identifyRemote();
+        }
+
+        return $this->remote;
+    }
+
+    /**
+     * @return Branch
+     */
+    public function getBranch()
+    {
+        if (is_null($this->branch)) {
+            $this->identifyBranch();
+        }
+
+        return $this->branch;
+    }
 //
 //    /**
 //     * @return null|string
