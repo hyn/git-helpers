@@ -4,18 +4,35 @@ namespace Hyn\GitHelpers\Objects;
 
 use Illuminate\Support\Arr;
 use Illuminate\Support\Collection;
-
+use GitElephant\Repository;
+use GitElephant\Objects\Branch;
+use GitElephant\Objects\Remote;
+use GitElephant\Objects\Tag;
 
 /**
  * @property string $name
  */
 class Package
 {
-
     /**
      * @var string
      */
-    public $path;
+    protected $path;
+
+    /**
+     * @var Tag
+     */
+    protected $lastTag;
+
+    /**
+     * @var Remote
+     */
+    protected $remote;
+
+    /**
+     * @var Branch
+     */
+    protected $branch;
 
     /**
      * @var string
@@ -23,47 +40,14 @@ class Package
     public $latestTag;
 
     /**
-     * @var string
-     */
-    public $remoteUrl;
-
-    /**
-     * @var string
-     */
-    public $remoteName;
-
-    /**
-     * @var boolean
-     */
-    public $remotePushable;
-
-    /**
-     * @var boolean
-     */
-    public $remoteFetchable;
-
-    /**
-     * @var string
-     */
-    public $branch;
-
-    /**
      * @var Collection
      */
     protected $composer;
 
-
     /**
-     * @var array
+     * @var Repository
      */
-    protected $sections = [
-        'D'  => 'Deleted files',
-        'R'  => 'Renamed files',
-        'C'  => 'Copied files',
-        'U'  => 'Unmerged files',
-        'M'  => 'Modified files',
-        '??' => 'Files not in .git'
-    ];
+    protected $git;
 
     /**
      * Package constructor.
@@ -87,109 +71,18 @@ class Package
 
         $this->path = $path;
 
-        $this->syncWithRemotes();
+        $this->identifyProperties();
+    }
 
+    /**
+     * Sets up the environment by identifying needed properties.
+     */
+    protected function identifyProperties()
+    {
+        $this->git = new Repository($this->path);
         $this->identifyRemote();
         $this->identifyBranch();
         $this->identifyLatestTag();
-    }
-
-    /**
-     * @param $name
-     * @return mixed
-     */
-    public function __get($name)
-    {
-        if ($this->composer->has($name)) {
-            return $this->composer->get($name);
-        }
-    }
-
-    /**
-     * @return null|string
-     */
-    public function getCommitState()
-    {
-        exec("git status --porcelain", $lines);
-
-        return $this->shortCommitState($this->splitCommitSections($lines));
-    }
-
-    /**
-     * @return null|string
-     */
-    public function getUnpushedCommitState()
-    {
-        exec("git log {$this->remoteName}/{$this->branch}..HEAD --not --remotes --oneline", $lines);
-
-        return count($lines) ? "Commits unpushed: " . count($lines) : null;
-    }
-
-    /**
-     * Shows the number of commits since the latest tag/version.
-     *
-     * @return null|string
-     */
-    public function getChangesSinceLatestTag()
-    {
-        $count = exec("git rev-list {$this->latestTag}..HEAD --count");
-
-        return $count > 0 ? "Commits since latest tag: {$count}" : null;
-    }
-
-    /**
-     * @param $lines
-     * @return Collection
-     */
-    protected function splitCommitSections($lines)
-    {
-        $information = [];
-
-        foreach ($lines as $line) {
-            $line = trim($line);
-            if (preg_match('/^(?<state>[^ ]+) (?<file>.*)$/', $line, $match)) {
-                $state = Arr::get($match, 'state');
-                $file  = Arr::get($match, 'file');
-
-                if (!array_key_exists($state, $information)) {
-                    $information[$state] = [];
-                }
-
-                $information[$state][] = $file;
-            }
-        }
-
-        return collect($information);
-    }
-
-    /**
-     * @param Collection $collection
-     * @return null|string
-     */
-    protected function shortCommitState(Collection $collection)
-    {
-        $state = [];
-
-        foreach ($collection as $name => $entries) {
-            $state[] = $this->translateSection($name) . ": " . count($entries);
-        }
-
-        return count($state) ? join("\t", $state) : null;
-    }
-
-    /**
-     * @param $section
-     * @return mixed
-     */
-    protected function translateSection($section)
-    {
-        return Arr::get($this->sections, $section, $section);
-    }
-
-    protected function syncWithRemotes()
-    {
-        exec('git fetch --all 1>/dev/null', $lines);
-        unset($lines);
     }
 
     /**
@@ -197,7 +90,7 @@ class Package
      */
     protected function identifyLatestTag()
     {
-        $this->latestTag = exec('git describe --abbrev=0 --tags `git rev-list --tags --max-count=1 HEAD`');
+        $this->lastTag = $this->git->getLastTag();
     }
 
     /**
@@ -205,33 +98,131 @@ class Package
      */
     protected function identifyBranch()
     {
-        $line = exec('git branch --no-color --contains HEAD');
-        list($tmp, $branch) = preg_split('/\s+/', $line);
-        $this->branch = $branch;
+        $this->branch = $this->git->getMainBranch();
     }
 
     /**
-     * Identifies the remote name, url and checks for push/fetch rights.
+     * Identifies the remote in use.
      */
     protected function identifyRemote()
     {
-        exec('git remote -v', $lines);
+        // get local remotes
+        $remotes = $this->git->getRemotes(false);
 
-        foreach ($lines as $line) {
-            list($remote, $url, $type) = preg_split('/\s+/', $line);
-            $type = trim($type, '()');
-            if ($remote === 'composer' && count($lines) > 2) {
-                continue;
-            }
-            if ($remote === 'origin') {
-                $this->remoteName = $remote;
-                $this->remoteUrl  = $url;
-                if ($type == 'fetch') {
-                    $this->remoteFetchable = true;
-                } elseif ($type == 'push') {
-                    $this->remotePushable = false;
-                }
+        /** @var Remote $remote */
+        foreach ($remotes as $remote) {
+            if ($remote->getName() == 'origin' || ($remote->getFetchURL() != '' && $remote->getPushURL() != '')) {
+                $this->remote = $remote;
             }
         }
     }
+
+    public function getCommitsSinceTag(Tag $tag = null)
+    {
+        if($tag == null) {
+            $tag = $this->lastTag;
+        }
+        return $this->git->countCommits($tag);
+    }
+
+//
+//    /**
+//     * @param $name
+//     * @return mixed
+//     */
+//    public function __get($name)
+//    {
+//        if ($this->composer->has($name)) {
+//            return $this->composer->get($name);
+//        }
+//    }
+//
+//    /**
+//     * @return null|string
+//     */
+//    public function getCommitState()
+//    {
+//        exec("git status --porcelain", $lines);
+//
+//        return $this->shortCommitState($this->splitCommitSections($lines));
+//    }
+//
+//    /**
+//     * @return null|string
+//     */
+//    public function getUnpushedCommitState()
+//    {
+//        exec("git log {$this->remoteName}/{$this->branch}..HEAD --not --remotes --oneline", $lines);
+//
+//        return count($lines) ? "Commits unpushed: " . count($lines) : null;
+//    }
+//
+//    /**
+//     * Shows the number of commits since the latest tag/version.
+//     *
+//     * @return null|string
+//     */
+//    public function getChangesSinceLatestTag()
+//    {
+//        $count = exec("git rev-list {$this->latestTag}..HEAD --count");
+//
+//        return $count > 0 ? "Commits since latest tag: {$count}" : null;
+//    }
+//
+//    /**
+//     * @param $lines
+//     * @return Collection
+//     */
+//    protected function splitCommitSections($lines)
+//    {
+//        $information = [];
+//
+//        foreach ($lines as $line) {
+//            $line = trim($line);
+//            if (preg_match('/^(?<state>[^ ]+) (?<file>.*)$/', $line, $match)) {
+//                $state = Arr::get($match, 'state');
+//                $file  = Arr::get($match, 'file');
+//
+//                if (!array_key_exists($state, $information)) {
+//                    $information[$state] = [];
+//                }
+//
+//                $information[$state][] = $file;
+//            }
+//        }
+//
+//        return collect($information);
+//    }
+//
+//    /**
+//     * @param Collection $collection
+//     * @return null|string
+//     */
+//    protected function shortCommitState(Collection $collection)
+//    {
+//        $state = [];
+//
+//        foreach ($collection as $name => $entries) {
+//            $state[] = $this->translateSection($name) . ": " . count($entries);
+//        }
+//
+//        return count($state) ? join("\t", $state) : null;
+//    }
+//
+//    /**
+//     * @param $section
+//     * @return mixed
+//     */
+//    protected function translateSection($section)
+//    {
+//        return Arr::get($this->sections, $section, $section);
+//    }
+//
+//    protected function syncWithRemotes()
+//    {
+//        exec('git fetch --all 1>/dev/null', $lines);
+//        unset($lines);
+//    }
+//
+
 }

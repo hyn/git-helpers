@@ -9,6 +9,11 @@ use Symfony\Component\Console\Output\OutputInterface;
 
 class StatusHelper extends Command
 {
+    /**
+     * Directory command is ran from.
+     *
+     * @var string
+     */
     protected $directory;
 
     protected function configure()
@@ -48,12 +53,13 @@ class StatusHelper extends Command
                 "{$this->directory}/{$subDirectory}"
             );
 
-            $output->writeln(sprintf('<info>%s - version: %s</info>', $package->name, $package->latestTag));
+//            $output->writeln(sprintf('<info>%s - version: %s</info>', $package->name, $package->latestTag));
 
             // Show commit status, open, added and new.
-            $output->writeln($package->getCommitState());
-            $output->writeln($package->getUnpushedCommitState());
-            $output->writeln($package->getChangesSinceLatestTag());
+            $output->writeln($package->getCommitsSinceTag());
+//            $output->writeln($package->getCommitState());
+//            $output->writeln($package->getUnpushedCommitState());
+//            $output->writeln($package->getChangesSinceLatestTag());
 
             // Return to original path.
             chdir($this->directory);
