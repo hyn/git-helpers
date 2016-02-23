@@ -77,11 +77,11 @@ class Package
             throw new \Exception("$path does not exist.");
         }
 
-        if (!realpath("$path/composer.json")) {
-            throw new \Exception("No composer file in $path.");
+        if (realpath("$path/composer.json")) {
+            $this->composer = collect(json_decode(file_get_contents(realpath("$path/composer.json")), true));
+        } else {
+            $this->composer = collect();
         }
-
-        $this->composer = collect(json_decode(file_get_contents(realpath("$path/composer.json")), true));
 
         chdir($path);
 
@@ -135,6 +135,14 @@ class Package
         $count = exec("git rev-list {$this->latestTag}..HEAD --count");
 
         return $count > 0 ? "Commits since latest tag: {$count}" : null;
+    }
+
+    /**
+     * Pulls latest changes.
+     */
+    public function pullLatestChanges()
+    {
+        exec("git pull {$this->remoteName} {$this->branch}");
     }
 
     /**
