@@ -38,8 +38,37 @@ set your composer file to point to these packages:
     ]
 }
 ```
+
 The above will symlink your development packages from workbench to the vendor folder
-automatically. Now you can use the `gh status` command in the folder workbench to 
-check the status of your git remote and local changes immediately.
+automatically.
 
 > Please note in the above repositories path configuration packages are expected immediately in the workbench directory, eg: `workbench/package`. A composer.json file should exist in `workbench/package/composer.json`.
+
+### gh status
+
+Now you can use the `gh status` command in the folder workbench to 
+check the status of your git remote and local changes immediately.
+
+The following is taken into account:
+
+- A title consisting of:
+    - The name of the package (in case of a json file).
+    - The latest version (based on the latest tag).
+- Open changes (uncommitted, new etc).
+- Number of commits since last tag.
+- Number of commits not pushed.
+
+### gh pull
+
+The command `gh pull` allows you to mass pull all subdirectories to get you the latest changes.
+
+You can use the optional argument to match subdirectories against a certain (regular expression) match; eg:
+
+```bash
+gh pull ^feature-
+```
+To pull only directories starting with `feature-`.
+
+Please note this command will not pull changes from the remotes if uncommitted changes have been detected.
+To pull these changes nevertheless you can use the `--force` or shorthand `-f` to force pull. Be warned; 
+in most cases this is a very bad idea.
