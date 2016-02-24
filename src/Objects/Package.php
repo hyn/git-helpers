@@ -132,9 +132,11 @@ class Package
      */
     public function getChangesSinceLatestTag()
     {
-        $count = exec("git rev-list {$this->latestTag}..HEAD --count");
+        if (!empty($this->latestTag)) {
+            $count = exec("git rev-list {$this->latestTag}..HEAD --count");
 
-        return $count > 0 ? "Commits since latest tag: {$count}" : null;
+            return $count > 0 ? "Commits since latest tag: {$count}" : null;
+        }
     }
 
     /**
@@ -205,7 +207,15 @@ class Package
      */
     protected function identifyLatestTag()
     {
-        $this->latestTag = exec('git describe --abbrev=0 --tags `git rev-list --tags --max-count=1 HEAD`');
+        exec('git tag', $tagCount);
+
+        if(!count($tagCount)) {
+            return;
+        }
+
+        $output = exec('git describe --abbrev=0 --tags `git rev-list --tags --max-count=1 HEAD`', $lines, $state);
+
+        $this->latestTag = $output;
     }
 
     /**
