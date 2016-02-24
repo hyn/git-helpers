@@ -223,7 +223,7 @@ class Package
      */
     protected function identifyBranch()
     {
-        $line = exec('git branch --no-color --contains HEAD');
+        $line = exec('git branch --no-color --contains HEAD | grep ^\*');
         list($tmp, $branch) = preg_split('/\s+/', $line);
         $this->branch = $branch;
     }
