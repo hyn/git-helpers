@@ -136,14 +136,18 @@ class Package
     /**
      * Shows the number of commits since the latest tag/version.
      *
+     * @param bool $count
      * @return null|string
      */
-    public function getChangesSinceLatestTag()
+    public function getChangesSinceLatestTag($count = true)
     {
         if (!empty($this->latestTag)) {
-            $count = exec("git rev-list {$this->latestTag}..HEAD --count");
-
-            return $count > 0 ? "Commits since latest tag: {$count}" : null;
+            $c = exec("git rev-list {$this->latestTag}..HEAD --count");
+            if($count) {
+                return $c > 0 ? "Commits since latest tag: {$c}" : null;
+            } else {
+                passthru("git log {$this->latestTag}..HEAD --oneline --full-history --graph -n {$c}");
+            }
         }
     }
 
@@ -224,7 +228,8 @@ class Package
             return;
         }
 
-        $output = exec('git describe --abbrev=0 --tags `git rev-list --tags --max-count=1`', $lines, $state);
+//        $output = exec('git describe --abbrev=0 --tags `git rev-list --tags --max-count=1`', $lines, $state);
+        $output = exec('git describe --abbrev=0 --tags', $lines, $state);
 
         $this->latestTag = $output;
     }

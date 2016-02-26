@@ -66,7 +66,7 @@ class TagHelper extends Command
                 $output->writeln('<comment>No commits detected since last tag, skipping.</comment>');
                 continue;
             } else {
-                $output->writeln($package->getChangesSinceLatestTag());
+                $package->getChangesSinceLatestTag(false);
                 $version = $this->askForVersion($input, $output, $package);
                 if (empty($version)) {
                     $output->writeln('<comment>Skipped tagging, no version provided.</comment>');
