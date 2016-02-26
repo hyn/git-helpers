@@ -228,10 +228,14 @@ class Package
             return;
         }
 
-//        $output = exec('git describe --abbrev=0 --tags `git rev-list --tags --max-count=1`', $lines, $state);
-        $output = exec('git describe --abbrev=0 --tags', $lines, $state);
+        $one = exec('git describe --abbrev=0 --tags `git rev-list --tags --max-count=1`', $lines, $state);
+        $two = exec('git describe --abbrev=0 --tags', $lines, $state);
 
-        $this->latestTag = $output;
+        if(version_compare($one, $two, '>=')) {
+            $this->latestTag = $one;
+        } else {
+            $this->latestTag = $two;
+        }
     }
 
     /**
