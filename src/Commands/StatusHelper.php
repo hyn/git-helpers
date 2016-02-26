@@ -2,6 +2,7 @@
 
 namespace Hyn\GitHelpers\Commands;
 
+use Hyn\GitHelpers\Objects\Directory;
 use Hyn\GitHelpers\Objects\Package;
 use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Input\InputInterface;
@@ -9,6 +10,9 @@ use Symfony\Component\Console\Output\OutputInterface;
 
 class StatusHelper extends Command
 {
+    /**
+     * @var Directory
+     */
     protected $directory;
 
     protected function configure()
@@ -16,7 +20,7 @@ class StatusHelper extends Command
         $this->setName('status')
             ->setDescription('Shows status of git repositories in all subdirectories.');
 
-        $this->directory = getcwd();
+        $this->directory = new Directory;
     }
 
     /**
@@ -27,20 +31,19 @@ class StatusHelper extends Command
      */
     protected function execute(InputInterface $input, OutputInterface $output)
     {
-        $output->writeLn(["<comment>Verifying status for: {$this->directory}</comment>", '']);
+        $output->writeLn(["<comment>Verifying status for: {$this->directory->getPath()}</comment>", '']);
 
-        $subDirectories = glob("*", GLOB_ONLYDIR);
-
-        if(!count($subDirectories)) {
+        if ($this->directory->getSubdirectories()->isEmpty()) {
             $output->writeln('<error>No subdirectories found.</error>');
+
             return;
         }
 
         // Loop through all directories to search for repositories.
-        foreach ($subDirectories as $subDirectory) {
+        foreach ($this->directory->getSubdirectories() as $subDirectory) {
             // Instantiates package from directory.
             $package = new Package(
-                "{$this->directory}/{$subDirectory}"
+                $subDirectory
             );
 
             $output->writeln(sprintf('<info>%s - version: %s</info>', $package->name, $package->latestTag));
@@ -51,7 +54,7 @@ class StatusHelper extends Command
             $output->writeln($package->getChangesSinceLatestTag());
 
             // Return to original path.
-            chdir($this->directory);
+            chdir($this->directory->getCurrentPath());
         }
     }
 }

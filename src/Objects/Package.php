@@ -106,6 +106,14 @@ class Package
     }
 
     /**
+     * @param $tag
+     */
+    public function addTag($tag)
+    {
+        exec("git tag {$tag} && git push {$this->remoteName} {$this->branch} --tags");
+    }
+
+    /**
      * @return null|string
      */
     public function getCommitState()
@@ -196,6 +204,9 @@ class Package
         return Arr::get($this->sections, $section, $section);
     }
 
+    /**
+     * Loads remote information from repository.
+     */
     protected function syncWithRemotes()
     {
         exec('git fetch --all 1>/dev/null', $lines);
@@ -213,7 +224,7 @@ class Package
             return;
         }
 
-        $output = exec('git describe --abbrev=0 --tags `git rev-list --tags --max-count=1 HEAD`', $lines, $state);
+        $output = exec('git describe --abbrev=0 --tags `git rev-list --tags --max-count=1`', $lines, $state);
 
         $this->latestTag = $output;
     }

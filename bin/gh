@@ -17,6 +17,9 @@ foreach ($autoloaders as $autoload) {
 use Symfony\Component\Console\Application;
 
 $console = new Application();
+
 $console->add(new Commands\StatusHelper);
 $console->add(new Commands\PullHelper);
+$console->add(new Commands\TagHelper);
+
 $console->run();

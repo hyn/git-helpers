@@ -72,3 +72,13 @@ To pull only directories starting with `feature-`.
 Please note this command will not pull changes from the remotes if uncommitted changes have been detected.
 To pull these changes nevertheless you can use the `--force` or shorthand `-f` to force pull. Be warned; 
 in most cases this is a very bad idea.
+
+### gh tag
+
+The command `gh tag` can be used to add new tags to your repositories. When commits are detected since the latest
+tag, you'll be asked to provide a new tag. You can also skip by leaving the input empty.
+
+As with the pull command, you can use the optional argument to match only specific directories.
+ 
+With the option `--up` you can specify what part of the previous version you'd like to see in the suggested input,
+choose between major, minor or patch.

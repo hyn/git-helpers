@@ -2,6 +2,7 @@
 
 namespace Hyn\GitHelpers\Commands;
 
+use Hyn\GitHelpers\Objects\Directory;
 use Hyn\GitHelpers\Objects\Package;
 use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Input\InputArgument;
@@ -11,6 +12,9 @@ use Symfony\Component\Console\Output\OutputInterface;
 
 class PullHelper extends Command
 {
+    /**
+     * @var Directory
+     */
     protected $directory;
 
     protected function configure()
@@ -20,7 +24,7 @@ class PullHelper extends Command
             ->addArgument('match', InputArgument::OPTIONAL, 'Only pull matching directories [optional, regex]')
             ->addOption('force', 'f', InputOption::VALUE_OPTIONAL, 'Force pulling in changes');
 
-        $this->directory = getcwd();
+        $this->directory = new Directory();
     }
 
     /**
@@ -31,18 +35,16 @@ class PullHelper extends Command
      */
     protected function execute(InputInterface $input, OutputInterface $output)
     {
-        $output->writeLn(["<comment>Loading directories to pull for: {$this->directory}</comment>", '']);
+        $output->writeLn(["<comment>Loading directories to pull for: {$this->directory->getPath()}</comment>", '']);
 
-        $subDirectories = glob("*", GLOB_ONLYDIR);
-
-        if (!count($subDirectories)) {
+        if ($this->directory->getSubdirectories()->isEmpty()) {
             $output->writeln('<error>No subdirectories found.</error>');
 
             return;
         }
 
         // Loop through all directories to search for repositories.
-        foreach ($subDirectories as $subDirectory) {
+        foreach ($this->directory->getSubdirectories() as $subDirectory) {
 
             if ($input->getArgument('match') && ! preg_match("/{$input->getArgument('match')}/", $subDirectory)) {
                 $output->writeln("<comment>Skipped {$subDirectory}</comment>");
@@ -51,7 +53,7 @@ class PullHelper extends Command
 
             // Instantiates package from directory.
             $package = new Package(
-                "{$this->directory}/{$subDirectory}"
+                $subDirectory
             );
 
             $output->writeln(sprintf('<info>%s - version: %s</info>', $package->name, $package->latestTag));
@@ -65,7 +67,7 @@ class PullHelper extends Command
             }
 
             // Return to original path.
-            chdir($this->directory);
+            chdir($this->directory->getCurrentPath());
         }
     }
 }
