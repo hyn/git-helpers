@@ -9,6 +9,8 @@ working with lots of subdirectories containing git repositories.
 composer global require hyn/git-helpers
 ```
 
+> Make sure to place the ~/.composer/vendor/bin directory in your PATH so the gh executable can be located by your system.
+
 ## Usage
 
 You can now globally use the command `gh`, eg:
