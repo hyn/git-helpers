@@ -213,7 +213,7 @@ class Package
      */
     protected function syncWithRemotes()
     {
-        exec('git fetch --all 1>/dev/null', $lines);
+        exec('git fetch --all --quiet', $lines);
         unset($lines);
     }
 
