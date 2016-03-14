@@ -84,3 +84,15 @@ As with the pull command, you can use the optional argument to match only specif
  
 With the option `--up` you can specify what part of the previous version you'd like to see in the suggested input,
 choose between major, minor or patch.
+
+### gh changelog
+
+With the `gh changelog` command you are able to generate changelogs between versions quite easily. Please do understand
+this is a simple parsed commit history between two versions.
+
+The command will loop through all your repositories, find all tags and will auto generate a diff log file in a specified
+sub folder (use `--path` option to override the default value "changelogs"). Please note any existing files will be removed
+before writing into them!
+
+As with some of the other commands you can use the argument to filter the directories and use `-f` to force creating changelogs
+if you have open changes in the directory.
