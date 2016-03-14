@@ -5,6 +5,7 @@ namespace Hyn\GitHelpers\Commands;
 use Hyn\GitHelpers\Objects\Directory;
 use Hyn\GitHelpers\Objects\Package;
 use Illuminate\Support\Arr;
+use Illuminate\Support\Collection;
 use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Input\InputArgument;
 use Symfony\Component\Console\Input\InputInterface;
@@ -25,7 +26,7 @@ class TagHelper extends Command
             ->setDescription('Tag possible subdirectories to mark new versions.')
             ->addArgument('match', InputArgument::OPTIONAL, 'Only tag matching directories [optional, regex]')
             ->addOption('up', null, InputOption::VALUE_OPTIONAL, 'The version type to increment, [major, minor, patch]', 'patch')
-            ->addOption('force', 'f', InputOption::VALUE_OPTIONAL, 'Force tagging');
+            ->addOption('force', 'f', InputOption::VALUE_NONE, 'Force tagging');
 
         $this->directory = new Directory();
     }
@@ -66,7 +67,14 @@ class TagHelper extends Command
                 $output->writeln('<comment>No commits detected since last tag, skipping.</comment>');
                 continue;
             } else {
-                $package->getChangesSinceLatestTag(false);
+                $changes = $package->getChangesSinceLatestTag(false);
+
+                if ($changes instanceof Collection) {
+                    $changes->each(function($item) use ($output) {
+                        $output->writeln($item);
+                    });
+                }
+
                 $version = $this->askForVersion($input, $output, $package);
                 if (empty($version)) {
                     $output->writeln('<comment>Skipped tagging, no version provided.</comment>');

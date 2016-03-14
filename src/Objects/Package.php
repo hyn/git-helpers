@@ -141,13 +141,26 @@ class Package
      */
     public function getChangesSinceLatestTag($count = true)
     {
-        if (!empty($this->latestTag)) {
-            $c = exec("git rev-list {$this->latestTag}..HEAD --count");
-            if($count) {
-                return $c > 0 ? "Commits since latest tag: {$c}" : null;
-            } else {
-                passthru("git log {$this->latestTag}..HEAD --oneline --full-history --graph -n {$c}");
-            }
+        return $this->getChangesBetween($this->latestTag, 'HEAD', $count);
+    }
+
+    public function getChangesBetween($start = null, $end = 'HEAD', $count = true)
+    {
+        if (empty($start) && !empty($this->latestTag)) {
+            $start = $this->latestTag;
+        }
+
+        if (empty($start)) {
+            return;
+        }
+
+        $c = exec("git rev-list {$start}..{$end} --count");
+
+        if ($count) {
+            return $c > 0 ? "Commits since latest tag: {$c}" : null;
+        } else {
+            exec("git log {$start}..{$end} --oneline --full-history --graph -n {$c}", $lines);
+            return new Collection($lines);
         }
     }
 
@@ -215,6 +228,17 @@ class Package
     {
         exec('git fetch --all --quiet', $lines);
         unset($lines);
+    }
+
+    public function getTags($direction = 'DESC')
+    {
+        exec('git tag', $lines);
+        $versions = new Collection($lines);
+        $versions = $versions->sort(function($a, $b) use ($direction) {
+            return version_compare($a, $b, $direction == 'DESC' ? '<' : '>');
+        });
+
+        return $versions;
     }
 
     /**

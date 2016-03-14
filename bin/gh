@@ -21,5 +21,6 @@ $console = new Application();
 $console->add(new Commands\StatusHelper);
 $console->add(new Commands\PullHelper);
 $console->add(new Commands\TagHelper);
+$console->add(new Commands\ChangelogHelper);
 
 $console->run();

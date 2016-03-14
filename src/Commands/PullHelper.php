@@ -22,7 +22,7 @@ class PullHelper extends Command
         $this->setName('pull')
             ->setDescription('Pull remote changes for repositories in all subdirectories.')
             ->addArgument('match', InputArgument::OPTIONAL, 'Only pull matching directories [optional, regex]')
-            ->addOption('force', 'f', InputOption::VALUE_OPTIONAL, 'Force pulling in changes');
+            ->addOption('force', 'f', InputOption::VALUE_NONE, 'Force pulling in changes');
 
         $this->directory = new Directory();
     }
