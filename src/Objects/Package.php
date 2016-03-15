@@ -296,4 +296,20 @@ class Package
             }
         }
     }
+
+    /**
+     * Stash open changes, including non-added files.
+     */
+    public function stashChanges()
+    {
+        exec('git stash save --include-untracked');
+    }
+
+    /**
+     * Restores stashed changes.
+     */
+    public function restoreChanges()
+    {
+        exec('git stash pop');
+    }
 }

@@ -22,6 +22,7 @@ class PullHelper extends Command
         $this->setName('pull')
             ->setDescription('Pull remote changes for repositories in all subdirectories.')
             ->addArgument('match', InputArgument::OPTIONAL, 'Only pull matching directories [optional, regex]')
+            ->addOption('stash', 's', InputOption::VALUE_NONE, 'Stash changes before pulling.')
             ->addOption('force', 'f', InputOption::VALUE_NONE, 'Force pulling in changes');
 
         $this->directory = new Directory();
@@ -46,7 +47,7 @@ class PullHelper extends Command
         // Loop through all directories to search for repositories.
         foreach ($this->directory->getSubdirectories() as $subDirectory) {
 
-            if ($input->getArgument('match') && ! preg_match("/{$input->getArgument('match')}/", $subDirectory)) {
+            if ($input->getArgument('match') && !preg_match("/{$input->getArgument('match')}/", $subDirectory)) {
                 $output->writeln("<comment>Skipped {$subDirectory}</comment>");
                 continue;
             }
@@ -58,12 +59,23 @@ class PullHelper extends Command
 
             $output->writeln(sprintf('<info>%s - version: %s</info>', $package->name, $package->latestTag));
 
+            $stashed = false;
+
             // files not committed?!
-            if (!$input->getOption('force') && $package->getCommitState()) {
+            if (!$input->getOption('force') && !$input->getOption('stash') && $package->getCommitState()) {
                 $output->writeln('<error>Local changes might be lost by pulling, commit/stash before continuing.</error>');
                 continue;
             } else {
+                if ($input->getOption('stash') && $package->getCommitState()) {
+                    $package->stashChanges();
+                    $stashed = true;
+                }
+
                 $package->pullLatestChanges();
+
+                if ($input->getOption('stash') && $stashed) {
+                    $package->restoreChanges();
+                }
             }
 
             // Return to original path.
