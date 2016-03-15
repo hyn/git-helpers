@@ -71,9 +71,11 @@ gh pull ^feature-
 ```
 To pull only directories starting with `feature-`.
 
-Please note this command will not pull changes from the remotes if uncommitted changes have been detected.
-To pull these changes nevertheless you can use the `--force` or shorthand `-f` to force pull. Be warned; 
-in most cases this is a very bad idea.
+Please note this command will not pull changes from the remotes if uncommitted changes have been detected. 
+Unless you:
+
+- force pulling using the `--force` or shorthand `-f` command option. In most cases this is a very bad idea!
+- stash and unstash your changes using `--stash` or `-s` command option.
 
 ### gh tag
 
