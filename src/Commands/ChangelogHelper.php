@@ -115,9 +115,9 @@ class ChangelogHelper extends Command
                                 $fileName = "{$path}/{$version}..{$higherVersion}";
                             }
 
-                            $package->generateChangelog($path, $version, $higherVersion, $aliasVersion);
-
-                            $output->writeln("{$changes->count()} lines of changelog written to {$fileName}");
+                            if ($package->generateChangelog($path, $version, $higherVersion, $aliasVersion)) {
+                                $output->writeln("{$changes->count()} lines of changelog written to {$fileName}");
+                            }
                         }
                     }
 

@@ -368,7 +368,7 @@ class Package
         if (file_exists($fileName) && $force) {
             unlink($fileName);
         } elseif (file_exists($fileName)) {
-            return;
+            return false;
         }
 
         $filePointer = fopen($fileName, "wb");
@@ -379,5 +379,7 @@ class Package
         });
 
         fclose($filePointer);
+
+        return true;
     }
 }
