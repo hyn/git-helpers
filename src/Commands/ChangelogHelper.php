@@ -24,8 +24,8 @@ class ChangelogHelper extends Command
             ->setDescription('Create changelogs for repositories in all subdirectories.')
             ->addArgument('match', InputArgument::OPTIONAL, 'Only pull matching directories [optional, regex].')
             ->addOption('force', 'f', InputOption::VALUE_NONE, 'Force pulling in changes.')
-            ->addOption('path', 'p', InputOption::VALUE_OPTIONAL, 'Save changelogs into specified path.', 'changelogs')
-        ;
+            ->addOption('head', null, InputOption::VALUE_OPTIONAL, 'Generate changelog from last version to HEAD, specify version for HEAD.')
+            ->addOption('path', 'p', InputOption::VALUE_OPTIONAL, 'Save changelogs into specified path.', 'changelogs');
 
         $this->directory = new Directory();
     }
@@ -39,7 +39,10 @@ class ChangelogHelper extends Command
      */
     protected function execute(InputInterface $input, OutputInterface $output)
     {
-        $output->writeLn(["<comment>Loading directories to create changelogs for: {$this->directory->getPath()}</comment>", '']);
+        $output->writeLn([
+            "<comment>Loading directories to create changelogs for: {$this->directory->getPath()}</comment>",
+            ''
+        ]);
 
         if ($this->directory->getSubdirectories()->isEmpty()) {
             $output->writeln('<error>No subdirectories found.</error>');
@@ -50,7 +53,7 @@ class ChangelogHelper extends Command
         // Loop through all directories to search for repositories.
         foreach ($this->directory->getSubdirectories() as $subDirectory) {
 
-            if ($input->getArgument('match') && ! preg_match("/{$input->getArgument('match')}/", $subDirectory)) {
+            if ($input->getArgument('match') && !preg_match("/{$input->getArgument('match')}/", $subDirectory)) {
                 $output->writeln("<comment>Skipped {$subDirectory}</comment>");
                 continue;
             }
@@ -64,6 +67,15 @@ class ChangelogHelper extends Command
 
             $output->writeln(sprintf('<info>%s - version: %s</info>', $package->name, $package->latestTag));
 
+            // attempt to create directory
+            if (!is_dir($path)) {
+                if (!mkdir($path, 0755, true)) {
+                    $output->writeln("<error>Couldn't create directory {$path}</error>");
+
+                    return;
+                }
+            }
+
             // files not committed?!
             if (!$input->getOption('force') && $package->getCommitState()) {
                 $output->writeln('<error>Package has an unresolved commit state; please resolve before creating changelogs.</error>');
@@ -71,24 +83,36 @@ class ChangelogHelper extends Command
             } else {
 
                 $higherVersion = null;
+                $aliasVersion = null;
 
-                foreach($package->getTags() as $version) {
+                if ($input->getOption('head')) {
+
+                    $higherVersion = 'HEAD';
+                    $tags          = [$package->latestTag];
+                    $aliasVersion = $input->getOption('head');
+
+                } else {
+                    $tags = $package->getTags();
+                }
+
+                foreach ($tags as $version) {
 
                     if (!is_null($higherVersion)) {
 
-                        if (!is_dir($path)) {
-                            if (!mkdir($path, 0755, true)) {
-                                $output->writeln("<error>Couldn't create directory {$path}</error>");
-                                return;
-                            }
+                        if ($aliasVersion) {
+                            $output->writeln("<info>Version {$version} - {$aliasVersion}</info>");
+                        } else {
+                            $output->writeln("<info>Version {$version} - {$higherVersion}</info>");
                         }
-
-                        $output->writeln("<info>Version {$version} - {$higherVersion}</info>");
 
                         $changes = $package->getChangesBetween($version, $higherVersion, false);
 
                         if ($changes instanceof Collection) {
-                            $fileName = "{$path}/{$version}..{$higherVersion}";
+                            if ($aliasVersion) {
+                                $fileName = "{$path}/{$version}..{$aliasVersion}";
+                            } else {
+                                $fileName = "{$path}/{$version}..{$higherVersion}";
+                            }
 
                             if (file_exists($fileName)) {
                                 unlink($fileName);
@@ -96,7 +120,7 @@ class ChangelogHelper extends Command
 
                             $filePointer = fopen($fileName, "wb");
 
-                            $changes->each(function($item) use ($filePointer) {
+                            $changes->each(function ($item) use ($filePointer) {
                                 fwrite($filePointer, $item);
                                 fwrite($filePointer, "\r\n");
                             });

@@ -114,6 +114,25 @@ class Package
     }
 
     /**
+     * Pushes latest changes to remote.
+     */
+    public function push()
+    {
+        exec("git push {$this->remoteName} $this->branch}");
+    }
+
+    /**
+     * Commit changes to remote.
+     *
+     * @param string $message
+     */
+    public function commit($message = '')
+    {
+        $message = str_replace("'", "\\'", $message);
+        exec("git commit -am '{$message}'");
+    }
+
+    /**
      * @return null|string
      */
     public function getCommitState()

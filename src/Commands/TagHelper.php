@@ -78,6 +78,7 @@ class TagHelper extends Command
                 $version = $this->askForVersion($input, $output, $package);
                 if (empty($version)) {
                     $output->writeln('<comment>Skipped tagging, no version provided.</comment>');
+                    continue;
                 }
                 $package->addTag($version);
             }
