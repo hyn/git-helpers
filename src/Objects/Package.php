@@ -103,6 +103,71 @@ class Package
     }
 
     /**
+     * Loads remote information from repository.
+     */
+    protected function syncWithRemotes()
+    {
+        exec('git fetch --all --quiet', $lines);
+        unset($lines);
+    }
+
+    /**
+     * Identifies the remote name, url and checks for push/fetch rights.
+     */
+    protected function identifyRemote()
+    {
+        exec('git remote -v', $lines);
+
+        foreach ($lines as $line) {
+            list($remote, $url, $type) = preg_split('/\s+/', $line);
+            $type = trim($type, '()');
+            if ($remote === 'composer' && count($lines) > 2) {
+                continue;
+            }
+            if ($remote === 'origin') {
+                $this->remoteName = $remote;
+                $this->remoteUrl  = $url;
+                if ($type == 'fetch') {
+                    $this->remoteFetchable = true;
+                } elseif ($type == 'push') {
+                    $this->remotePushable = false;
+                }
+            }
+        }
+    }
+
+    /**
+     * Identifies the working branch this package is on.
+     */
+    protected function identifyBranch()
+    {
+        $line = exec('git branch --no-color --contains HEAD | grep ^\*');
+        list($tmp, $branch) = preg_split('/\s+/', $line);
+        $this->branch = $branch;
+    }
+
+    /**
+     * Loads latest tag/version.
+     */
+    protected function identifyLatestTag()
+    {
+        exec('git tag', $tagCount);
+
+        if (!count($tagCount)) {
+            return;
+        }
+
+        $one = exec('git describe --abbrev=0 --tags `git rev-list --tags --max-count=1`', $lines, $state);
+        $two = exec('git describe --abbrev=0 --tags', $lines, $state);
+
+        if (version_compare($one, $two, '>=')) {
+            $this->latestTag = $one;
+        } else {
+            $this->latestTag = $two;
+        }
+    }
+
+    /**
      * @param $name
      * @return mixed
      */
@@ -151,6 +216,55 @@ class Package
     }
 
     /**
+     * @param Collection $collection
+     * @return null|string
+     */
+    protected function shortCommitState(Collection $collection)
+    {
+        $state = [];
+
+        foreach ($collection as $name => $entries) {
+            $state[] = $this->translateSection($name) . ": " . count($entries);
+        }
+
+        return count($state) ? join("\t", $state) : null;
+    }
+
+    /**
+     * @param $section
+     * @return mixed
+     */
+    protected function translateSection($section)
+    {
+        return Arr::get($this->sections, $section, $section);
+    }
+
+    /**
+     * @param $lines
+     * @return Collection
+     */
+    protected function splitCommitSections($lines)
+    {
+        $information = [];
+
+        foreach ($lines as $line) {
+            $line = trim($line);
+            if (preg_match('/^(?<state>[^ ]+) (?<file>.*)$/', $line, $match)) {
+                $state = Arr::get($match, 'state');
+                $file  = Arr::get($match, 'file');
+
+                if (!array_key_exists($state, $information)) {
+                    $information[$state] = [];
+                }
+
+                $information[$state][] = $file;
+            }
+        }
+
+        return collect($information);
+    }
+
+    /**
      * @return null|string
      */
     public function getUnpushedCommitState()
@@ -195,6 +309,7 @@ class Package
             return $c > 0 ? "Commits since latest tag: {$c}" : null;
         } else {
             exec("git log {$start}..{$end} --oneline --full-history --graph -n {$c}", $lines);
+
             return new Collection($lines);
         }
     }
@@ -208,64 +323,6 @@ class Package
     }
 
     /**
-     * @param $lines
-     * @return Collection
-     */
-    protected function splitCommitSections($lines)
-    {
-        $information = [];
-
-        foreach ($lines as $line) {
-            $line = trim($line);
-            if (preg_match('/^(?<state>[^ ]+) (?<file>.*)$/', $line, $match)) {
-                $state = Arr::get($match, 'state');
-                $file  = Arr::get($match, 'file');
-
-                if (!array_key_exists($state, $information)) {
-                    $information[$state] = [];
-                }
-
-                $information[$state][] = $file;
-            }
-        }
-
-        return collect($information);
-    }
-
-    /**
-     * @param Collection $collection
-     * @return null|string
-     */
-    protected function shortCommitState(Collection $collection)
-    {
-        $state = [];
-
-        foreach ($collection as $name => $entries) {
-            $state[] = $this->translateSection($name) . ": " . count($entries);
-        }
-
-        return count($state) ? join("\t", $state) : null;
-    }
-
-    /**
-     * @param $section
-     * @return mixed
-     */
-    protected function translateSection($section)
-    {
-        return Arr::get($this->sections, $section, $section);
-    }
-
-    /**
-     * Loads remote information from repository.
-     */
-    protected function syncWithRemotes()
-    {
-        exec('git fetch --all --quiet', $lines);
-        unset($lines);
-    }
-
-    /**
      * Loads all tags.
      *
      * @param string $direction
@@ -275,67 +332,11 @@ class Package
     {
         exec('git tag', $lines);
         $versions = new Collection($lines);
-        $versions = $versions->sort(function($a, $b) use ($direction) {
+        $versions = $versions->sort(function ($a, $b) use ($direction) {
             return version_compare($a, $b, $direction == 'DESC' ? '<' : '>');
         });
 
         return $versions;
-    }
-
-    /**
-     * Loads latest tag/version.
-     */
-    protected function identifyLatestTag()
-    {
-        exec('git tag', $tagCount);
-
-        if(!count($tagCount)) {
-            return;
-        }
-
-        $one = exec('git describe --abbrev=0 --tags `git rev-list --tags --max-count=1`', $lines, $state);
-        $two = exec('git describe --abbrev=0 --tags', $lines, $state);
-
-        if(version_compare($one, $two, '>=')) {
-            $this->latestTag = $one;
-        } else {
-            $this->latestTag = $two;
-        }
-    }
-
-    /**
-     * Identifies the working branch this package is on.
-     */
-    protected function identifyBranch()
-    {
-        $line = exec('git branch --no-color --contains HEAD | grep ^\*');
-        list($tmp, $branch) = preg_split('/\s+/', $line);
-        $this->branch = $branch;
-    }
-
-    /**
-     * Identifies the remote name, url and checks for push/fetch rights.
-     */
-    protected function identifyRemote()
-    {
-        exec('git remote -v', $lines);
-
-        foreach ($lines as $line) {
-            list($remote, $url, $type) = preg_split('/\s+/', $line);
-            $type = trim($type, '()');
-            if ($remote === 'composer' && count($lines) > 2) {
-                continue;
-            }
-            if ($remote === 'origin') {
-                $this->remoteName = $remote;
-                $this->remoteUrl  = $url;
-                if ($type == 'fetch') {
-                    $this->remoteFetchable = true;
-                } elseif ($type == 'push') {
-                    $this->remotePushable = false;
-                }
-            }
-        }
     }
 
     /**
@@ -354,7 +355,7 @@ class Package
         exec('git stash pop');
     }
 
-    public function generateChangelog($path, $version, $higherVersion, $aliasVersion = false)
+    public function generateChangelog($path, $version, $higherVersion, $aliasVersion = false, $force = false)
     {
         $changes = $this->getChangesBetween($version, $higherVersion, false);
 
@@ -364,8 +365,10 @@ class Package
             $fileName = "{$path}/{$version}..{$higherVersion}";
         }
 
-        if (file_exists($fileName)) {
+        if (file_exists($fileName) && $force) {
             unlink($fileName);
+        } elseif (file_exists($fileName)) {
+            return;
         }
 
         $filePointer = fopen($fileName, "wb");
