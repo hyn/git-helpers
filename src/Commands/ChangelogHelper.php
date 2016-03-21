@@ -24,7 +24,9 @@ class ChangelogHelper extends Command
             ->setDescription('Create changelogs for repositories in all subdirectories.')
             ->addArgument('match', InputArgument::OPTIONAL, 'Only pull matching directories [optional, regex].')
             ->addOption('force', 'f', InputOption::VALUE_NONE, 'Force pulling in changes.')
-            ->addOption('head', null, InputOption::VALUE_OPTIONAL, 'Generate changelog from last version to HEAD, specify version for HEAD.')
+            ->addOption('commit', 'c', InputOption::VALUE_NONE, 'Auto commits the generated changelogs.')
+            ->addOption('head', null, InputOption::VALUE_OPTIONAL,
+                'Generate changelog from last version to HEAD, specify version for HEAD.')
             ->addOption('path', 'p', InputOption::VALUE_OPTIONAL, 'Save changelogs into specified path.', 'changelogs');
 
         $this->directory = new Directory();
@@ -54,7 +56,6 @@ class ChangelogHelper extends Command
         foreach ($this->directory->getSubdirectories() as $subDirectory) {
 
             if ($input->getArgument('match') && !preg_match("/{$input->getArgument('match')}/", $subDirectory)) {
-                $output->writeln("<comment>Skipped {$subDirectory}</comment>");
                 continue;
             }
 
@@ -83,13 +84,13 @@ class ChangelogHelper extends Command
             } else {
 
                 $higherVersion = null;
-                $aliasVersion = null;
+                $aliasVersion  = null;
 
                 if ($input->getOption('head')) {
 
                     $higherVersion = 'HEAD';
                     $tags          = [$package->latestTag];
-                    $aliasVersion = $input->getOption('head');
+                    $aliasVersion  = $input->getOption('head');
 
                 } else {
                     $tags = $package->getTags();
@@ -114,24 +115,17 @@ class ChangelogHelper extends Command
                                 $fileName = "{$path}/{$version}..{$higherVersion}";
                             }
 
-                            if (file_exists($fileName)) {
-                                unlink($fileName);
-                            }
-
-                            $filePointer = fopen($fileName, "wb");
-
-                            $changes->each(function ($item) use ($filePointer) {
-                                fwrite($filePointer, $item);
-                                fwrite($filePointer, "\r\n");
-                            });
-
-                            fclose($filePointer);
+                            $package->generateChangelog($path, $version, $higherVersion, $aliasVersion);
 
                             $output->writeln("{$changes->count()} lines of changelog written to {$fileName}");
                         }
                     }
 
                     $higherVersion = $version;
+
+                    if ($input->getOption('commit')) {
+                        $package->commit("Changelog added for {$version}.");
+                    }
                 }
             }
 

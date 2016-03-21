@@ -83,15 +83,23 @@ class Package
             $this->composer = collect();
         }
 
-        chdir($path);
-
         $this->path = $path;
+
+        $this->moveToPackageDirectory();
 
         $this->syncWithRemotes();
 
         $this->identifyRemote();
         $this->identifyBranch();
         $this->identifyLatestTag();
+    }
+
+    /**
+     * Changes working directory to that of the Package.
+     */
+    public function moveToPackageDirectory()
+    {
+        chdir($this->path);
     }
 
     /**
@@ -163,6 +171,14 @@ class Package
         return $this->getChangesBetween($this->latestTag, 'HEAD', $count);
     }
 
+    /**
+     * Loads all changes between commit states.
+     *
+     * @param null   $start
+     * @param string $end
+     * @param bool   $count
+     * @return Collection|string|null
+     */
     public function getChangesBetween($start = null, $end = 'HEAD', $count = true)
     {
         if (empty($start) && !empty($this->latestTag)) {
@@ -249,6 +265,12 @@ class Package
         unset($lines);
     }
 
+    /**
+     * Loads all tags.
+     *
+     * @param string $direction
+     * @return Collection
+     */
     public function getTags($direction = 'DESC')
     {
         exec('git tag', $lines);
@@ -330,5 +352,29 @@ class Package
     public function restoreChanges()
     {
         exec('git stash pop');
+    }
+
+    public function generateChangelog($path, $version, $higherVersion, $aliasVersion = false)
+    {
+        $changes = $this->getChangesBetween($version, $higherVersion, false);
+
+        if ($aliasVersion) {
+            $fileName = "{$path}/{$version}..{$aliasVersion}";
+        } else {
+            $fileName = "{$path}/{$version}..{$higherVersion}";
+        }
+
+        if (file_exists($fileName)) {
+            unlink($fileName);
+        }
+
+        $filePointer = fopen($fileName, "wb");
+
+        $changes->each(function ($item) use ($filePointer) {
+            fwrite($filePointer, $item);
+            fwrite($filePointer, "\r\n");
+        });
+
+        fclose($filePointer);
     }
 }

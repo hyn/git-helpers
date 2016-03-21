@@ -7,6 +7,7 @@ use Hyn\GitHelpers\Objects\Package;
 use Illuminate\Support\Arr;
 use Illuminate\Support\Collection;
 use Symfony\Component\Console\Command\Command;
+use Symfony\Component\Console\Input\ArrayInput;
 use Symfony\Component\Console\Input\InputArgument;
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Input\InputOption;
@@ -26,6 +27,7 @@ class TagHelper extends Command
             ->setDescription('Tag possible subdirectories to mark new versions.')
             ->addArgument('match', InputArgument::OPTIONAL, 'Only tag matching directories [optional, regex]')
             ->addOption('up', null, InputOption::VALUE_OPTIONAL, 'The version type to increment, [major, minor, patch]', 'patch')
+            ->addOption('changelog', 'c', InputOption::VALUE_NONE, 'Automatically generate changelog for the new version and commit it.')
             ->addOption('force', 'f', InputOption::VALUE_NONE, 'Force tagging');
 
         $this->directory = new Directory();
@@ -51,11 +53,11 @@ class TagHelper extends Command
         foreach ($this->directory->getSubdirectories() as $subDirectory) {
 
             if ($input->getArgument('match') && ! preg_match("/{$input->getArgument('match')}/", $subDirectory)) {
-                $output->writeln("<comment>Skipped {$subDirectory}</comment>");
                 continue;
             }
 
             // Instantiates package from directory.
+            /** @var Package $package */
             $package = new Package(
                 $subDirectory
             );
@@ -80,6 +82,12 @@ class TagHelper extends Command
                     $output->writeln('<comment>Skipped tagging, no version provided.</comment>');
                     continue;
                 }
+
+                if ($input->getOption('changelog')) {
+                    $package->generateChangelog('changelogs', $package->latestTag, 'HEAD', $version);
+                    $package->commit("Auto-generated changelog for {$version}.");
+                }
+
                 $package->addTag($version);
             }
 
