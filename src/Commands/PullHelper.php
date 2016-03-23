@@ -46,8 +46,8 @@ class PullHelper extends Command
 
         // Loop through all directories to search for repositories.
         foreach ($this->directory->getSubdirectories() as $subDirectory) {
-
-            if ($input->getArgument('match') && !preg_match("/{$input->getArgument('match')}/", $subDirectory)) {
+            $quotedMatch = preg_quote(rtrim($input->getArgument('match'), DIRECTORY_SEPARATOR));
+            if ($input->getArgument('match') && !preg_match("/$quotedMatch/", $subDirectory)) {
                 $output->writeln("<comment>Skipped {$subDirectory}</comment>");
                 continue;
             }
