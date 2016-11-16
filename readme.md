@@ -98,3 +98,15 @@ before writing into them!
 
 As with some of the other commands you can use the argument to filter the directories and use `-f` to force creating changelogs
 if you have open changes in the directory.
+
+### gh commit
+
+The `gh commit` command allows you to commit similar changes across all repositories. A commit message may be specified using the `-m` command.
+
+As with other commands, you can use the optional argument to match only specific directories.
+
+### gh push
+
+The `gh push` command pushes the current branch in all repositories to the remote.
+
+As with other commands, you can use the optional argument to match only specific directories.

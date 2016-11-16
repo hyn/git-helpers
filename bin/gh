@@ -18,9 +18,11 @@ use Symfony\Component\Console\Application;
 
 $console = new Application();
 
-$console->add(new Commands\StatusHelper);
-$console->add(new Commands\PullHelper);
-$console->add(new Commands\TagHelper);
 $console->add(new Commands\ChangelogHelper);
+$console->add(new Commands\CommitHelper);
+$console->add(new Commands\PullHelper);
+$console->add(new Commands\PushHelper);
+$console->add(new Commands\StatusHelper);
+$console->add(new Commands\TagHelper);
 
 $console->run();

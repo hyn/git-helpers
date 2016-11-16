@@ -191,7 +191,7 @@ class Package
      */
     public function push()
     {
-        exec("git push {$this->remoteName} $this->branch}");
+        exec("git push {$this->remoteName} {$this->branch}");
     }
 
     /**
