@@ -53,7 +53,12 @@ class StatusHelper extends Command
                 $subDirectory
             );
 
-            $output->writeln(sprintf('<info>%s - version: %s</info>', $package->name, $package->latestTag));
+            $output->writeln(sprintf(
+                '<info>%s - branch: %s, version: %s</info>', 
+                $package->name, 
+                $package->branch,
+                $package->latestTag ?: 'none'
+            ));
 
             // Show commit status, open, added and new.
             $output->writeln($package->getCommitState());
